@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+    }
+    input#file {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+    }
+    input#text {
+      opacity: 0
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <canvas id="canvas"></canvas>
+    <input id="file" type="file" ondrop="drop(event)">
+    <input id="text" type="text">
+  </div>
+</body>
+
+<script src="jquery.min.js"></script>
+<script>
+  var arr = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f']
+  var canvas = document.getElementById('canvas')
+  var context = canvas.getContext('2d')
+  var file = document.getElementById('file')
+  var dragFlag = false
+  var startX = 0
+  var startY = 0
+
+  $(document).on('click', 'input#file', function(event) {
+    event.preventDefault()
+  })
+
+  $(document).on('click', function(event) {
+    var color = context.getImageData(event.pageX, event.pageY, 1, 1)
+    var color0x = '#'
+    color0x += to0x(color.data[0])
+    color0x += to0x(color.data[1])
+    color0x += to0x(color.data[2])
+    $('#text').val(color0x)
+    $('#text')[0].select()
+    document.execCommand("Copy", false, '')
+    console.clear()
+    console.log(color0x)
+  })
+
+  $(document).on('mousedown', function(event) {
+    dragFlag = true
+    startX = event.pageX
+    startY = event.pageY
+  })
+
+  $(document).on('mouseup', function(event) {
+    dragFlag = false
+  })
+
+  $(document).on('mousemove', function(event) {
+    event.preventDefault()
+    if (dragFlag) {
+      $(document).scrollLeft($(document).scrollLeft() + startX - event.pageX)
+      $(document).scrollTop($(document).scrollTop() + startY - event.pageY)
+    }
+  })
+
+  function drawImg(img) {
+    $('#canvas').attr('width', img.width)
+    $('#canvas').attr('height', img.height)
+    $('#file').css('width', img.width + 'px')
+    $('#file').css('height', img.height + 'px')
+    if (!img.complete) {
+      setTimeout(function() {
+        drawImg(img)
+      }, 100)
+      return
+    }
+    context.drawImage(img, 0, 0, img.width, img.height)
+    console.log(img.width, img.height)
+  }
+
+  function to0x(num) {
+    var string = ''
+    string += arr[num % 16]
+    string += arr[(num - num%16) / 16]
+    return string.split('').reverse().join('')
+  }
+
+  var drop = function(event) {
+    event.preventDefault()
+    var fileList = event.dataTransfer.files
+    console.log(fileList)
+    if (/^image/.test( fileList[0].type)) {
+        var reader = new FileReader()
+        reader.readAsDataURL(fileList[0])
+        reader.onloadend = function() {
+          var img = new Image()
+          img.src = this.result
+          drawImg(img)
+      }
+    }
+  }
+</script>
+</html>
